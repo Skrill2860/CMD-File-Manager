@@ -14,8 +14,8 @@ namespace File_Manager
         private static readonly Dictionary<string, string> cmdsDescriptions = new()
         {
             { "cd", "cd [disc:][path]\n" },
-            { "dir", "dir [-recursive]\n" },
-            { "ls", "ls [-recursive]\n" },
+            { "dir", "dir\n" },
+            { "ls", "ls\n" },
             {
                 "match",
                 "match [--regular_expr] [-r]\n" +
@@ -352,7 +352,7 @@ namespace File_Manager
             {
                 if (OperatingSystem.IsWindows())
                 {
-                    currentPath = DriveInfo.GetDrives().First(t => t.IsReady).Name;
+                    currentPath = Path.GetPathRoot(currentPath);
                 }
                 else if (OperatingSystem.IsLinux())
                 {
@@ -412,7 +412,7 @@ namespace File_Manager
             try
             {
                 foreach (FileInfo file in baseDir.GetFiles(regex))
-                    Console.WriteLine($"{file.CreationTime:dd.MM.yyyy hh:mm}           {prevDirs}\\{file.Name}");
+                    Console.WriteLine($"{file.CreationTime:dd.MM.yyyy hh:mm}           {prevDirs}{file.Name}");
             }
             catch (Exception e)
             {
@@ -420,7 +420,7 @@ namespace File_Manager
                 return;
             }
             foreach (DirectoryInfo dir in baseDir.GetDirectories())
-                PrintFilesRecursively(regex, dir, prevDirs += baseDir.Name);
+                PrintFilesRecursively(regex, dir, prevDirs + baseDir.Name + '\\');
         }
 
         private void PrintFilesInDirectory(string regex, DirectoryInfo baseDir)
@@ -440,94 +440,98 @@ namespace File_Manager
         {
             bool recursive = false;
             string regex = "*";
-            for (int i = 1; i < args.Length; i++)
+            if (args.Contains("-r") || args.Contains("-rec") || args.Contains("-recursive"))
+                recursive = true;
+            if (args.Length > 3)
+                throw new ArgumentException("Too much arguments");
+            if (args.Length > 1 && !args[1].StartsWith("-r"))
             {
-                if (args[i].StartsWith("-r"))
-                {
-                    if (args[i] == "-r" || args[i] == "-rec" || args[i] == "-recursive")
-                    {
-                        recursive = true;
-                    }
-                }
-                else if (args[i].StartsWith("--"))
-                {
-                    regex = args[i].Substring(2);
-                    Console.WriteLine(regex);
-                }
+                regex = args[1];
             }
+            else if (args.Length > 2)
+            {
+                regex = args[2];
+            }
+            Console.WriteLine(regex);
             if (recursive)
                 PrintFilesRecursively(regex, new DirectoryInfo(currentPath));
             else
                 PrintFilesInDirectory(regex, new DirectoryInfo(currentPath));
         }
 
-        private void CopyFilesRecursively(string regex, DirectoryInfo baseDir, DirectoryInfo destinationDir, bool overwrite)
+        private static void CopyDirectory(string sourceDirName, string destDirName, bool copySubDirs = false, bool useOverwrite = false, string mask = "*")
+    {
+        // Get the subdirectories for the specified directory.
+        DirectoryInfo dir = new DirectoryInfo(sourceDirName);
+
+        if (!dir.Exists)
         {
-            foreach (DirectoryInfo dir in baseDir.GetDirectories())
-                CopyFilesRecursively(regex, dir, destinationDir.CreateSubdirectory(dir.Name), overwrite);
-            foreach (FileInfo file in baseDir.GetFiles(regex))
-                file.CopyTo(Path.Combine(destinationDir.FullName, file.Name), overwrite);
+            throw new DirectoryNotFoundException(
+                "Source directory does not exist or could not be found: "
+                + sourceDirName);
         }
+
+        DirectoryInfo[] dirs = dir.GetDirectories();
+        
+        // If the destination directory doesn't exist, create it.       
+        Directory.CreateDirectory(destDirName);        
+
+        // Get the files in the directory and copy them to the new location.
+        FileInfo[] files = dir.GetFiles(mask);
+        foreach (FileInfo file in files)
+        {
+            string tempPath = Path.Combine(destDirName, file.Name);
+            file.CopyTo(tempPath, useOverwrite);
+        }
+
+        // If copying subdirectories, copy them and their contents to new location.
+        if (copySubDirs)
+        {
+            foreach (DirectoryInfo subdir in dirs)
+            {
+                string tempPath = Path.Combine(destDirName, subdir.Name);
+                CopyDirectory(subdir.FullName, tempPath, copySubDirs);
+            }
+        }
+    }
 
         private void RRCopy(string[] args)
         {
-            bool destinationSpecified = false;
-            bool overwrite = false;
+            bool useOverwrite = false;
             string regex = "*";
+            DirectoryInfo newDirectory = new DirectoryInfo(currentPath);
             if (args.Length > 4)
                 throw new ArgumentException("Too much arguments");
-            for (int i = 1; i < args.Length; i++)
+            if (args.Length < 2)
+                throw new ArgumentException("Destination path is not specified");
+            if (args.Length > 1)
             {
-                if (args[i].StartsWith("--"))
+                if (!TryGetDirectoryPathIfExists(args[1], out destinationPath))
                 {
-                    regex = args[i].Substring(2);
-                }
-                else if (args[i] == "-overwrite")
-                {
-                    overwrite = true;
-                }
-                else
-                {
-                    if (Directory.Exists($"{currentPath}\\{args[i]}"))
-                    {
-                        destinationPath = $"{currentPath}\\{args[i]}";
-                    }
-                    else if (Directory.Exists(args[i]))
-                    {
-                        destinationPath = args[i];
-                    }
-                    else if (args[i].Contains(':'))
-                    {
-                        try
-                        {
-                            Directory.CreateDirectory(args[i]);
-                            destinationPath = args[i];
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine(e.Message);
-                            return;
-                        }
-                    }
+                    if (Path.IsPathRooted(args[1]))
+                        destinationPath = args[1];
                     else
+                        destinationPath = $"{currentPath}\\{args[1]}";
+                    try
                     {
-                        try
-                        {
-                            Directory.CreateDirectory($"{currentPath}\\{args[i]}");
-                            destinationPath = $"{currentPath}\\{args[i]}";
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine(e.Message);
-                            return;
-                        }
+                        Directory.CreateDirectory(destinationPath);
                     }
-                    destinationSpecified = true;
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                        return;
+                    }
+                }
+                if (args.Length > 2)
+                {
+                    regex = args[2];
+                }
+                if (args.Length > 3 && (args[3] == "-overwrite" || args[3] == "-o"))
+                {
+                    useOverwrite = true;
                 }
             }
-            if (!destinationSpecified)
-                throw new ArgumentException("Destination path is not specified");
-            CopyFilesRecursively(regex, new DirectoryInfo(currentPath), new DirectoryInfo(destinationPath), overwrite);
+            CopyDirectory(currentPath, destinationPath, true, useOverwrite, regex);
             destinationPath = "";
         }
 
@@ -621,7 +625,7 @@ namespace File_Manager
             {
                 try
                 {
-                    if (args[1].Contains(':'))
+                    if (Path.IsPathRooted(args[1]))
                         Directory.CreateDirectory(args[1]);
                     else
                         Directory.CreateDirectory($"{currentPath}\\{args[1]}");
@@ -676,13 +680,13 @@ namespace File_Manager
             }
             else
             {
-                encoding = "ascii";
+                encoding = "utf-8";
             }
             if (!TryGetFilePathIfExists(args[1], out string filePath))
             {
                 try
                 {
-                    if (args[1].Contains(':'))
+                    if (Path.IsPathRooted(args[1]))
                     {
                         filePath = args[1];
                     }
@@ -725,12 +729,13 @@ namespace File_Manager
                 if (TryGetFilePathIfExists(args[i], out args[i]))
                 {
                     inputFiles.Add(args[i]);
-                } else
+                }
+                else
                 {
                     Console.WriteLine($"Could not find file {args[i]}. It will be ignored");
                 }
             }
-            using (var output = File.Create($"{currentPath}\\output.dat"))
+            using (var output = File.Create($"{currentPath}\\outputConcatenated.dat"))
             {
                 foreach (var file in inputFiles)
                 {
@@ -743,6 +748,15 @@ namespace File_Manager
                             output.Write(buffer, 0, bytesRead);
                         }
                     }
+                }
+            }
+            using (var input = File.OpenRead($"{currentPath}\\output.dat"))
+            {
+                var buffer = new byte[chunkSize];
+                int bytesRead;
+                while ((bytesRead = input.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    Console.Write(Encoding.UTF8.GetString(buffer));
                 }
             }
         }
@@ -968,7 +982,7 @@ namespace File_Manager
                             Console.WriteLine(currentPath);
                             break;
                         default:
-                            Console.WriteLine($"Command {args[0]} does not exist");
+                            Console.WriteLine($"Command @{args[0]}@ does not exist");
                             break;
                     }
                 }

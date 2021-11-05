@@ -23,15 +23,15 @@ namespace File_Manager
         // .. - Перейти на папку выше
         // . - Перейти в папку с exeшником
 
-        // dir || ls [-recursive]
+        // dir || ls
 
-        // match [--regular_expr] [-recursive]
-        // --regular_expression Само регулярное выражение, -- в начале обязательно. Если не указано - то включены все файлы.
+        // match [regular_expr] [-recursive]
+        // regular_expression Само регулярное выражение. Если не указано - то включены все файлы.
         // -recursive или -rec или -r Рекурсивно выводит все файлы и папки текущего каталога и всех подкаталогов. Если не указано - то поиск только по текущему каталогу.
 
-        // rrcopy [destination_path] [--regular_expr] [-overwrite]
+        // rrcopy [destination_path] [regular_expr] [-overwrite]
         // Regular Recursive Copy. Скопировать все файлы из директории и всех её поддиректорий по маске в другую директорию, причём, если директория, в которую происходит копирование, не существует – она создаётся.
-        // --regular_expression Само регулярное выражение, -- в начале обязательно. Если не указано - то включены все файлы.
+        // regular_expression Само регулярное выражение. Если не указано - то включены все файлы.
         // -overwrite Если указано, то при копировании все файлы будут записаны поверх существующих, если они имеют одинаковое имя.
 
         // copy || cp [file\path\name] [destination\directory\path] [-overwrite]
@@ -44,7 +44,8 @@ namespace File_Manager
         // rmdir [directory\\path\\name]
         // md || mkdir [directory\\path\\name]
         // type || cat [file\\path\\name]
-        // mktxtfile [filename] [-enc encoding_name]
+        // mktxtfile [filename] [-encoding_name]
+        // -encoding_name Например: -utf-8, -ascii, -utf-16
         // concat [filename_A] [filename_B] etc
 
         static void Main(string[] args)

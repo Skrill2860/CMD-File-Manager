@@ -343,6 +343,9 @@ ASALocalRun/
 # BeatPulse healthcheck temp database
 healthchecksdb
 
+# My tests biggest fault (fck rrcopy, fck recursion)
+Recursive death/
+
 # Backup folder for Package Reference Convert tool in Visual Studio 2017
 MigrationBackup/
 
