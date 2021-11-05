@@ -261,7 +261,11 @@ namespace File_Manager
                         Console.Write('>');
                     }
                 }
-                else
+                else if (char.IsLetterOrDigit(keyPressed.KeyChar) ||
+                    char.IsWhiteSpace(keyPressed.KeyChar) ||
+                    char.IsPunctuation(keyPressed.KeyChar) ||
+                    char.IsSeparator(keyPressed.KeyChar) ||
+                    char.IsSymbol(keyPressed.KeyChar))
                 {
                     try
                     {
@@ -643,13 +647,21 @@ namespace File_Manager
 
         private void PrintTextFile(string[] args)
         {
+            string encoding = "utf-8";
             if (args.Length < 2)
                 throw new ArgumentException("File path is not specified");
+            if (args.Length > 2)
+            {
+                if (args[2].StartsWith('-'))
+                {
+                    encoding = args[2][1..];
+                }
+            }
             if (TryGetFilePathIfExists(args[1], out string filePath))
             {
                 try
                 {
-                    using StreamReader sr = new StreamReader(filePath);
+                    using StreamReader sr = new StreamReader(filePath, Encoding.GetEncoding(encoding));
                     while (!sr.EndOfStream)
                     {
                         Console.WriteLine(sr.ReadLine());
