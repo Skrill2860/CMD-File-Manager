@@ -32,7 +32,7 @@ namespace File_Manager
                 Console.WriteLine(e.Message);
             }
 
-            s_currentPath = drives.Contains(drive.ToUpper() + separator) ? $"{drive.ToUpper()}{separator}" : throw new ArgumentException($"This drive is unavailable or does not exist: {drive.ToUpper()}\\");
+            s_currentPath = drives.Contains(drive.ToUpper() + s_separator) ? $"{drive.ToUpper()}{s_separator}" : throw new ArgumentException($"This drive is unavailable or does not exist: {drive.ToUpper()}\\");
         }
 
         /// <summary>
@@ -57,27 +57,29 @@ namespace File_Manager
             // Move into exe directory
             if (args[1] == ".")
             {
-                s_currentPath = Directory.GetCurrentDirectory() + separator;
+                s_currentPath = Directory.GetCurrentDirectory() + s_separator;
                 return;
             }
             // Move into parent directory
             if (args[1] == "..")
             {
-                if (s_currentPath == null || new DirectoryInfo(s_currentPath).Parent == null)
+                if (s_currentPath == null)
                     return;
-                s_currentPath = new DirectoryInfo(s_currentPath).Parent.FullName;
+                var directoryInfo = new DirectoryInfo(s_currentPath).Parent;
+                if (directoryInfo != null)
+                    s_currentPath = directoryInfo.FullName;
                 return;
             }
             // Try move into directory if full path given
             if (Directory.Exists(args[1]))
             {
-                s_currentPath = args[1] + (args[1].EndsWith(separator) ? "" : separator);
+                s_currentPath = args[1] + (args[1].EndsWith(s_separator) ? "" : s_separator);
                 return;
             }
             // Try move into subdirectory if only name given 
             if (s_currentPath != null)
             {
-                string temp = $"{s_currentPath}{(s_currentPath.EndsWith(separator) || args[1].StartsWith(separator) ? "" : separator)}{args[1]}";
+                string temp = $"{s_currentPath}{(s_currentPath.EndsWith(s_separator) || args[1].StartsWith(s_separator) ? "" : s_separator)}{args[1]}";
                 if (Directory.Exists(temp))
                 {
                     s_currentPath = temp;
@@ -91,7 +93,6 @@ namespace File_Manager
         /// <summary>
         /// Выводит все файлы и поддиректории в текущей директории. Вывод формата cd в Windows.
         /// </summary>
-        /// <param name="args"></param>
         private static void PrintDirectoryContent()
         {
             SortedDictionary<string, string> content = new();
@@ -124,7 +125,7 @@ namespace File_Manager
                 return;
             }
             foreach (DirectoryInfo dir in baseDir.GetDirectories())
-                PrintFilesRecursively(regex, dir, prevDirs + baseDir.Name + separator);
+                PrintFilesRecursively(regex, dir, prevDirs + baseDir.Name + s_separator);
         }
 
         /// <summary>
@@ -203,7 +204,7 @@ namespace File_Manager
                     string tempPath = Path.Combine(destDirName, subdir.Name);
                     if (tempPath.Length > 250)
                         throw new IOException("Path is too long");
-                    CopyDirectory(subdir.FullName, tempPath, copySubDirs, useOverwrite, mask);
+                    CopyDirectory(subdir.FullName, tempPath, true, useOverwrite, mask);
                 }
             }
 
@@ -219,7 +220,10 @@ namespace File_Manager
                 {
                     file.CopyTo(tempPath, useOverwrite);
                 }
-                catch { }
+                catch
+                {
+                    // ignored
+                }
             }
         }
 
@@ -232,7 +236,6 @@ namespace File_Manager
         {
             bool useOverwrite = false;
             string regex = "*";
-            DirectoryInfo newDirectory = new DirectoryInfo(s_currentPath);
             if (args.Length > 4)
                 throw new ArgumentException("Too much arguments");
             if (args.Length < 2)
@@ -244,7 +247,7 @@ namespace File_Manager
                     if (Path.IsPathRooted(args[1]))
                         s_destinationPath = args[1];
                     else
-                        s_destinationPath = $"{s_currentPath}{separator}{args[1]}";
+                        s_destinationPath = $"{s_currentPath}{s_separator}{args[1]}";
                     try
                     {
                         Directory.CreateDirectory(s_destinationPath);
@@ -264,14 +267,7 @@ namespace File_Manager
                     useOverwrite = true;
                 }
             }
-            try
-            {
-                CopyDirectory(s_currentPath, s_destinationPath, true, useOverwrite, regex);
-            }
-            catch
-            {
-                throw;
-            }
+            CopyDirectory(s_currentPath, s_destinationPath, true, useOverwrite, regex);
             s_destinationPath = "";
         }
 
@@ -291,7 +287,7 @@ namespace File_Manager
             if (TryGetFilePathIfExists(args[1], out string filePath) && TryGetDirectoryPathIfExists(args[2], out string directoryPath))
             {
                 FileInfo file = new FileInfo(filePath);
-                File.Copy(filePath, $"{directoryPath}{separator}{file.Name}", useOverwrite);
+                File.Copy(filePath, $"{directoryPath}{s_separator}{file.Name}", useOverwrite);
             }
             else
             {
@@ -315,7 +311,7 @@ namespace File_Manager
             if (TryGetFilePathIfExists(args[1], out string filePath) && TryGetDirectoryPathIfExists(args[2], out string directoryPath))
             {
                 FileInfo file = new FileInfo(filePath);
-                File.Move(filePath, $"{directoryPath}{separator}{file.Name}", useOverwrite);
+                File.Move(filePath, $"{directoryPath}{s_separator}{file.Name}", useOverwrite);
             }
             else
             {
@@ -333,14 +329,7 @@ namespace File_Manager
                 throw new ArgumentException("File path is not specified");
             if (TryGetFilePathIfExists(args[1], out string filePath))
             {
-                try
-                {
-                    File.Delete(filePath);
-                }
-                catch
-                {
-                    throw;
-                }
+                File.Delete(filePath);
             }
             else
             {
@@ -358,14 +347,7 @@ namespace File_Manager
                 throw new ArgumentException("Directory path is not specified");
             if (TryGetDirectoryPathIfExists(args[1], out string dirPath))
             {
-                try
-                {
-                    Directory.Delete(dirPath);
-                }
-                catch
-                {
-                    throw;
-                }
+                Directory.Delete(dirPath);
             }
             else
             {
@@ -381,17 +363,10 @@ namespace File_Manager
         {
             if (args.Length < 2)
                 throw new ArgumentException("New directory path is not specified");
-            try
-            {
-                if (Path.IsPathRooted(args[1]))
-                    Directory.CreateDirectory(args[1]);
-                else
-                    Directory.CreateDirectory($"{s_currentPath}{separator}{args[1]}");
-            }
-            catch
-            {
-                throw;
-            }
+            if (Path.IsPathRooted(args[1]))
+                Directory.CreateDirectory(args[1]);
+            else
+                Directory.CreateDirectory($"{s_currentPath}{s_separator}{args[1]}");
         }
 
         /// <summary>
@@ -412,17 +387,10 @@ namespace File_Manager
             }
             if (TryGetFilePathIfExists(args[1], out string filePath))
             {
-                try
+                using StreamReader sr = new StreamReader(filePath, Encoding.GetEncoding(encoding));
+                while (!sr.EndOfStream)
                 {
-                    using StreamReader sr = new StreamReader(filePath, Encoding.GetEncoding(encoding));
-                    while (!sr.EndOfStream)
-                    {
-                        Console.WriteLine(sr.ReadLine());
-                    }
-                }
-                catch
-                {
-                    throw;
+                    Console.WriteLine(sr.ReadLine());
                 }
             }
             else
@@ -461,7 +429,7 @@ namespace File_Manager
                     }
                     else
                     {
-                        filePath = $"{s_currentPath}{separator}{args[1]}";
+                        filePath = $"{s_currentPath}{s_separator}{args[1]}";
                     }
                     using FileStream newFile = new FileStream(filePath, FileMode.Create);
                     using StreamWriter sr = new StreamWriter(newFile, Encoding.GetEncoding(encoding));
@@ -508,7 +476,7 @@ namespace File_Manager
                     Console.WriteLine($"Could not find file {args[i]}. It will be ignored");
                 }
             }
-            using (var output = File.Create($"{s_currentPath}{separator}outputConcatenated.dat"))
+            using (var output = File.Create($"{s_currentPath}{s_separator}outputConcatenated.dat"))
             {
                 foreach (var file in inputFiles)
                 {
@@ -523,11 +491,10 @@ namespace File_Manager
                     }
                 }
             }
-            using (var input = File.OpenRead($"{s_currentPath}{separator}output.dat"))
+            using (var input = File.OpenRead($"{s_currentPath}{s_separator}output.dat"))
             {
                 var buffer = new byte[chunkSize];
-                int bytesRead;
-                while ((bytesRead = input.Read(buffer, 0, buffer.Length)) > 0)
+                while (input.Read(buffer, 0, buffer.Length) > 0)
                 {
                     Console.Write(Encoding.UTF8.GetString(buffer));
                 }

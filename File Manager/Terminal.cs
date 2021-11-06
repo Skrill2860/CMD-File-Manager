@@ -1,7 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Collections.Generic;
 
 namespace File_Manager
@@ -141,7 +139,7 @@ namespace File_Manager
             }
         };
 
-        private static char separator = '\\';
+        private static char s_separator = '\\';
 
         /// <summary>
         /// Инициализирует s_currentPath, записывая в нее первый попавшийся рабочий логический диск.
@@ -175,7 +173,7 @@ namespace File_Manager
             }
             if (!OperatingSystem.IsWindows())
             {
-                separator = '/';
+                s_separator = '/';
             }
         }
 

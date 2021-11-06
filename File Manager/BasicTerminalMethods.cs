@@ -17,7 +17,7 @@ namespace File_Manager
         {
             if (input == null) return new string[0];
             bool isInQuotes = false;
-            int wordBeg = 0, wordEnd = 0;
+            int wordBeg = 0;
             List<string> args = new();
             for (int i = 1; i < input.Length; i++)
             {
@@ -64,9 +64,9 @@ namespace File_Manager
                 outPath = path;
                 return true;
             }
-            else if (Directory.Exists($"{s_currentPath}{separator}{path}"))
+            else if (Directory.Exists($"{s_currentPath}{s_separator}{path}"))
             {
-                outPath = $"{s_currentPath}{separator}{path}";
+                outPath = $"{s_currentPath}{s_separator}{path}";
                 return true;
             }
             outPath = s_currentPath;
@@ -87,9 +87,9 @@ namespace File_Manager
                 outPath = path;
                 return true;
             }
-            else if (File.Exists($"{s_currentPath}{separator}{path}"))
+            else if (File.Exists($"{s_currentPath}{s_separator}{path}"))
             {
-                outPath = $"{s_currentPath}{separator}{path}";
+                outPath = $"{s_currentPath}{s_separator}{path}";
                 return true;
             }
             outPath = s_currentPath;
@@ -121,7 +121,7 @@ namespace File_Manager
 
             string basePath, startOfFileName;
             args[^1].Trim('\"');
-            int lastSepIdx = args[^1].LastIndexOfAny(new char[] { separator, '/' });
+            int lastSepIdx = args[^1].LastIndexOfAny(new [] { s_separator, '/' });
             if (lastSepIdx != -1)
             {
                 basePath = args[^1][0..(lastSepIdx + 1)];
@@ -195,6 +195,7 @@ namespace File_Manager
             StringBuilder commandBuilder = new(s_currentPath + ">");
             int minLineLength = commandBuilder.Length;
             Console.Write(s_currentPath + ">");
+            int cursorPosX = Console.CursorLeft;
             while (true)
             {
                 ConsoleKeyInfo keyPressed = Console.ReadKey();
@@ -210,6 +211,7 @@ namespace File_Manager
                         Console.WriteLine();
                         Console.WriteLine(guess);
                         Console.Write(commandBuilder);
+                        cursorPosX = Console.CursorLeft;
                     }
                 }
                 else if (keyPressed.Key == ConsoleKey.Enter)
@@ -222,7 +224,14 @@ namespace File_Manager
                     if (commandBuilder.Length > minLineLength)
                     {
                         commandBuilder.Remove(commandBuilder.Length - 1, 1);
-                        Console.Write(" \b");
+                        if (Console.CursorLeft < cursorPosX)
+                        {
+                            Console.Write(" \b");
+                        }
+                        else
+                        {
+                            Console.Write("\b \b");
+                        }
                     }
                     else
                     {
@@ -237,6 +246,7 @@ namespace File_Manager
                 {
                     try
                     {
+                        cursorPosX = Console.CursorLeft;
                         commandBuilder.Append(keyPressed.KeyChar);
                     }
                     catch (ArgumentOutOfRangeException)
