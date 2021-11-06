@@ -8,6 +8,13 @@ public static class CustomConsole
 {
     private static Canvas s_canvas = new Canvas(32, 32);
     private static Style s_menuHighlightStyle = new Style(HexToColor("#0D9688"));
+
+    // Colors used for text highlighting
+    public static string WARNING_COLOR = "#eb3447";
+    public static string TEXT_COLOR = "#daa368";
+    public static string ADDITIONAL_TEXT_COLOR = "#896a70";
+    public static string CODE_COLOR = "#948cbb";
+
     private const string MENU_COLOR = "#daa368";
 
     /// <summary>
@@ -71,61 +78,6 @@ public static class CustomConsole
     public static bool Confirm(string question)
     {
         return AnsiConsole.Confirm(question, false);
-    }
-
-    /// <summary>
-    /// Prints calculation menu with selectable options.
-    /// </summary>
-    /// <returns>Chosen option</returns>
-    public static string PrintCalcMenuOptions()
-    {
-        return AnsiConsole.Prompt<string>(new SelectionPrompt<string>()
-        .Title($"[{MENU_COLOR}]Choose an option that will be performed on the first matrix[/]")
-        .PageSize(10)
-        .AddChoices(new[] {
-            $"[{MENU_COLOR}]Add number(+)[/]", $"[{MENU_COLOR}]Subtract number(-)[/]",
-            $"[{MENU_COLOR}]Multiply by number(*)[/]", $"[{MENU_COLOR}]Sum (F + S)[/]",
-            $"[{MENU_COLOR}]Subtract (F - S)[/]", $"[{MENU_COLOR}]Dot product (F * S)[/]",
-            $"[{MENU_COLOR}]Transpose (T)[/]", $"[{MENU_COLOR}]Trace[/]",
-            $"[{MENU_COLOR}]Determinant[/]", $"[{MENU_COLOR}]Back to Menu[/]"
-        }).HighlightStyle(s_menuHighlightStyle));
-    }
-
-    /// <summary>
-    /// Prints calculation menu with selectable options.
-    /// </summary>
-    /// <returns>Chosen option</returns>
-    public static string PrintOptions(string[] options)
-    {
-        for (int i = 0; i < options.Length; i++)
-        {
-            options[i] = $"[{MENU_COLOR}]{options[i]}[/]";
-            //options[i] = $"[{MENU_COLOR}]{options[i]}[/]";
-        }
-        string chosenOption = AnsiConsole.Prompt<string>(new SelectionPrompt<string>()
-        .Title($"[{MENU_COLOR}]Choose the drive[/]")
-        .PageSize(10).AddChoices(options).HighlightStyle(s_menuHighlightStyle));
-        PrintText(chosenOption);
-        PrintText(chosenOption.Length.ToString());
-        return chosenOption.Substring(9, chosenOption.Length - 12);
-    }
-
-    /// <summary>
-    /// Prints main menu with selectable options.
-    /// </summary>
-    /// <returns>Chosen option</returns>
-    public static string PrintMenuOptions()
-    {
-        return AnsiConsole.Prompt<string>(new SelectionPrompt<string>()
-        .Title($"[#daa368]Menu:[/]")
-        .PageSize(10)
-        .AddChoices(new[] {
-            $"[{MENU_COLOR}]Set first matrix[/]", $"[{MENU_COLOR}]Set second matrix[/]",
-            $"[{MENU_COLOR}]Swap matrices[/]", $"[{MENU_COLOR}]Load matrices from file[/]",
-            $"[{MENU_COLOR}]Show matrices[/]", $"[{MENU_COLOR}]Calculation mode[/]",
-            $"[{MENU_COLOR}]Guide[/]", $"[{MENU_COLOR}]Solve system with Gauss[/]",
-            $"[{MENU_COLOR}]Exit[/]"
-        }).HighlightStyle(s_menuHighlightStyle));
     }
 
     /// <summary>
