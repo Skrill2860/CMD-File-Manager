@@ -141,6 +141,8 @@ namespace File_Manager
             }
         };
 
+        private static char separator = '\\';
+
         /// <summary>
         /// Инициализирует s_currentPath, записывая в нее первый попавшийся рабочий логический диск.
         /// </summary>
@@ -170,6 +172,10 @@ namespace File_Manager
             {
                 s_currentPath = "/";
                 Console.WriteLine(e.Message);
+            }
+            if (!OperatingSystem.IsWindows())
+            {
+                separator = '/';
             }
         }
 

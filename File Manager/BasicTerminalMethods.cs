@@ -64,9 +64,9 @@ namespace File_Manager
                 outPath = path;
                 return true;
             }
-            else if (Directory.Exists($"{s_currentPath}\\{path}"))
+            else if (Directory.Exists($"{s_currentPath}{separator}{path}"))
             {
-                outPath = $"{s_currentPath}\\{path}";
+                outPath = $"{s_currentPath}{separator}{path}";
                 return true;
             }
             outPath = s_currentPath;
@@ -87,9 +87,9 @@ namespace File_Manager
                 outPath = path;
                 return true;
             }
-            else if (File.Exists($"{s_currentPath}\\{path}"))
+            else if (File.Exists($"{s_currentPath}{separator}{path}"))
             {
-                outPath = $"{s_currentPath}\\{path}";
+                outPath = $"{s_currentPath}{separator}{path}";
                 return true;
             }
             outPath = s_currentPath;
@@ -121,7 +121,7 @@ namespace File_Manager
 
             string basePath, startOfFileName;
             args[^1].Trim('\"');
-            int lastSepIdx = args[^1].LastIndexOfAny(new char[] { '\\', '/' });
+            int lastSepIdx = args[^1].LastIndexOfAny(new char[] { separator, '/' });
             if (lastSepIdx != -1)
             {
                 basePath = args[^1][0..(lastSepIdx + 1)];
