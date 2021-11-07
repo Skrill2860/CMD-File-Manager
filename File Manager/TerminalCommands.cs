@@ -387,7 +387,7 @@ namespace File_Manager
             }
             if (TryGetFilePathIfExists(args[1], out string filePath))
             {
-                using StreamReader sr = new StreamReader(filePath, Encoding.GetEncoding(encoding));
+                using StreamReader sr = new StreamReader(filePath, Encoding.GetEncoding(encoding), false);
                 while (!sr.EndOfStream)
                 {
                     Console.WriteLine(sr.ReadLine());
